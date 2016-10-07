@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en" ng-app="myApp">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="initial-scale=1, maximum-scale=1, user-scalable=no, width=device-width" /> 
+    <title>ionic新闻</title>
+</head>
+<link rel="stylesheet" type="text/css" href="ionic/css/ionic.css">
+
+<script src="ionic/js/ionic.bundle.js"></script>
+<script src="js/zepto.js"></script>
+
+<body>
+    
+    <div ui-view></div>
+    
+</body>
+
+<script type="text/javascript">
+
+    var app = angular.module('myApp',['ionic']);
+
+    app.config(['$stateProvider','$urlRouterProvider',function($stateProvider,$urlRouterProvider){
+        $stateProvider.state('index',{
+            url:'/index',  //路由
+            templateUrl:'html/index.html', //模板
+            controller:'indexCtrl'
+        })
+        .state('detail',{
+            url:'/detail/:id/:type',
+            templateUrl:'html/detail.html', //模板
+            controller:'detailCtrl'
+        })
+
+        $urlRouterProvider.when('','#/index');
+
+    }])
+
+    app.controller('indexCtrl',['$scope','$http','$ionicLoading',function($scope,$http,$ionicLoading){
+
+        $ionicLoading.show({    //加载的动画
+            template:'<ion-spinner icon="ios"></ion-spinner>'
+        })
+        
+            
+        $http.jsonp('js/news.php',{
+            params:{
+                type:'top',
+                callback:'JSON_CALLBACK'
+            }
+        }).success(function(data){
+
+            data = data.result.data;
+            $scope.arr = data;
+
+            $ionicLoading.hide();   //加载完成 去掉
+        })
+    }])
+
+    app.controller('detailCtrl', ['$scope','$stateParams','$http','$sce','$ionicLoading', function($scope,$stateParams,$http,$sce,$ionicLoading){
+
+        $ionicLoading.show({    //加载的动画
+            template:'<ion-spinner icon="ios"></ion-spinner>'
+        })
+
+        $http.jsonp('js/news.php',{
+            params:{
+                type:$stateParams.type,
+                callback:'JSON_CALLBACK'
+            }
+        }).success(function(data){
+            data = data.result.data;
+            $scope.arr = data;
+            var url = $scope.arr[$stateParams.id].url;
+
+            $http.jsonp('js/http1.php',{
+                params:{
+                    url:url,
+                    callback:'JSON_CALLBACK'
+                }
+            }).success(function(data){
+                
+                $scope.htmlsce = $sce.trustAsHtml(data.match(/<article[^>]*>([\s\S]*?)<\/article>/g)[0]);
+
+                $ionicLoading.hide();   //加载完成 去掉
+            })
+        })
+        
+    }])
+
+    app.directive('header',function(){
+        return {
+            templateUrl:'html/header.html'
+        }
+    })
+
+    app.directive('content',function($window,$stateParams,thetype){
+        return {
+            templateUrl:'html/content.html',
+            link:function(scope,ele,attr){
+                scope.add = function(id,type){
+                    console.log(type)
+                    $window.location.href = '#/detail/' + id + '/' + thetype[type];
+                }
+            }
+        }
+    })
+
+    app.directive('navs',['$http',function($http){
+        return {
+            templateUrl:'html/navs.html',
+            link:function(scope,ele,attr){
+                ele.find('li').on('tap',function(){
+                    var name = this.getAttribute('data');
+                    ele.find('li').removeClass('active');
+                    angular.element(this).addClass('active');
+
+                    $http.jsonp('js/news.php',{
+                        params:{
+                            type:name,
+                            callback:'JSON_CALLBACK'
+                        }
+                    }).success(function(data){
+                        console.log(data);
+                        data = data.result.data;
+                        scope.arr = data;
+                    })
+                })
+            }
+        }
+    }])
+
+    app.service('thetype',function(){
+        return {
+            "头条":"top",'社会':'shehui','国内':'guonei','国际':'guoji','娱乐':'yule',
+        '体育':'tiyu','军事':'junshi','科技':'keji','财经':'caijing','时尚':'shishang',
+        }
+    })
+
+
+
+
+    
+</script>
+
+</html>

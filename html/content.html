@@ -1,0 +1,9 @@
+
+<ion-list class="list" ng-repeat='obj in arr'>
+    <ion-item class="item item-thumbnail-left" ng-click="add($index,obj.type?obj.type:obj.category)">
+      <img ng-src='{{obj.thumbnail_pic_s}}'>
+      <h2>{{obj.title}}</h2>
+      <p>{{obj.date}} &nbsp;&nbsp;&nbsp;{{obj.author_name}}</p>
+    </ion-item>
+</ion-list>
+
